@@ -38,90 +38,37 @@ namespace Isocline
 
         private void DrawCoord(Graphics g)
         {
-            g.DrawLine(Pens.Black, Transform(0, min), Transform(0, max));
-            g.DrawLine(Pens.Black, Transform(min, 0), Transform(max, 0));
-            var step = (max - min) / 20;
-            for (var i = min; i < max; i += step)
+            g.DrawLine(Pens.Black, Helpers.Transform(0, min,min,max,width,height), Helpers.Transform(0, max, min, max, width, height));
+            g.DrawLine(Pens.Black, Helpers.Transform(min, 0, min, max, width, height), Helpers.Transform(max, 0, min, max, width, height));
+            for (var i = min; i < max; i += 1)
             {
-                g.DrawString(String.Format("{0}", Math.Round(i, 2)), font, Brushes.Black, Transform(0, i));
-                g.DrawString(String.Format("{0}", Math.Round(i, 2)), font, Brushes.Black, Transform(i, 0));
+                var transformPointY = Helpers.Transform(0, i, min, max, width, height);
+                g.DrawString(String.Format("{0}", Math.Round(i, 2)), font, Brushes.Black, transformPointY);
+                g.DrawLine(Pens.Black, transformPointY.X - 3, transformPointY.Y, transformPointY.X + 3, transformPointY.Y);
+
+                var transformPointX = Helpers.Transform(i, 0, min, max, width, height);
+                g.DrawString(String.Format("{0}", Math.Round(i, 2)), font, Brushes.Black, transformPointX);
+                g.DrawLine(Pens.Black, transformPointX.X, transformPointX.Y - 3, transformPointX.X, transformPointX.Y + 3);
             }
         }
 
-        private Point Transform(double x, double y)
+        public void DrawQuadraticInterpolation(Graphics g, Func<double, double, double> dy, double x0, double y0)
         {
+            double x = x0, y = y0, step = 0.001;
 
-            return new Point((int)((x + (max - min) / 2) / (max - min) * width),
-                             (int)((-y + (max - min) / 2) / (max - min) * height));
-        }
-
-        public void DrawFX(Graphics g, Func<double, double> f)
-        {
-            int pixelWidth = picture.Width;
-            int pixelHeight = picture.Height;
-            double xScale = pixelWidth / (max - min);
-            double yScale = pixelHeight / (max - min);
-
-            int prevX = 0;
-            int prevY = (int)Math.Round(f(min) * yScale);
-
-            for (int i = 1; i < pixelWidth; i++)
-            {
-                double x = min + i / xScale;
-                double y = f(x);
-                int currX = i;
-                int currY = (int)Math.Round((max - y) * yScale);
-
-                // Draw the line segment using the efficient algorithm
-                int dx = Math.Abs(currX - prevX);
-                int dy = Math.Abs(currY - prevY);
-                int sx = prevX < currX ? 1 : -1;
-                int sy = prevY < currY ? 1 : -1;
-                int err = dx - dy;
-
-                while (true)
-                {
-                    g.FillRectangle(Brushes.Black, currX, currY, 1, 1);
-
-                    if (currX == prevX && currY == prevY)
-                        break;
-
-                    int e2 = 2 * err;
-                    if (e2 > -dy)
-                    {
-                        err -= dy;
-                        currX += sx;
-                    }
-                    if (e2 < dx)
-                    {
-                        err += dx;
-                        currY += sy;
-                    }
-                }
-
-                prevX = currX;
-                prevY = currY;
-            }
-        }
-
-        public void DrawSolution(Graphics g, Func<double, double, double> dy, double x0, double y0)
-        {
-            double x = x0, y = y0;
-            double step = 0.001; // Adjust the step size as needed
-
+            // Iterate forward
             while (x <= max)
             {
-                var k1 = step * dy(x, y);
-                var k2 = step * dy(x + 0.5 * step, y + 0.5 * k1);
-                var k3 = step * dy(x + 0.5 * step, y + 0.5 * k2);
-                var k4 = step * dy(x + step, y + k3);
+                var k1 = dy(x, y);
+                var k2 = dy(x + step / 2, y + step / 2 * k1);
+                var k3 = dy(x + step, y + step * k2);
 
                 var nx = x + step;
-                var ny = y + (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+                var ny = y + step / 6 * (k1 + 4 * k2 + k3);
 
                 try
                 {
-                    g.DrawLine(Pens.Black, Transform(x, y), Transform(nx, ny));
+                    g.DrawLine(Pens.Black, Helpers.Transform(x, y,min, max, width, height), Helpers.Transform(nx, ny, min, max, width, height));
                 }
                 catch { }
 
@@ -132,19 +79,19 @@ namespace Isocline
             x = x0;
             y = y0;
 
+            // Iterate backward
             while (x >= min)
             {
-                var k1 = step * dy(x, y);
-                var k2 = step * dy(x - 0.5 * step, y - 0.5 * k1);
-                var k3 = step * dy(x - 0.5 * step, y - 0.5 * k2);
-                var k4 = step * dy(x - step, y - k3);
+                var k1 = dy(x, y);
+                var k2 = dy(x - step / 2, y - step / 2 * k1);
+                var k3 = dy(x - step, y - step * k2);
 
                 var nx = x - step;
-                var ny = y - (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+                var ny = y - step / 6 * (k1 + 4 * k2 + k3);
 
                 try
                 {
-                    g.DrawLine(Pens.Black, Transform(x, y), Transform(nx, ny));
+                    g.DrawLine(Pens.Black, Helpers.Transform(x, y, min, max, width, height), Helpers.Transform(nx, ny, min, max, width, height));
                 }
                 catch { }
 
@@ -152,6 +99,43 @@ namespace Isocline
                 y = ny;
             }
         }
+        public void DrawLinearInterpolation(Graphics g, Func<double, double, double> dy, double x0, double y0)
+        {
+            double x = x0, y = y0, step = 0.001;
+            while (x <= max)
+            {
+                var k = dy(x, y);
+                var nx = x + step;
+                var ny = y + step * k;
 
+                try
+                {
+                    g.DrawLine(Pens.Black, Helpers.Transform(x, y, min, max, width, height), Helpers.Transform(nx, ny, min, max, width, height));
+                }
+                catch { };
+
+                x = nx;
+                y = ny;
+            }
+
+            x = x0;
+            y = y0;
+
+            while (x >= min)
+            {
+                var k = dy(x, y);
+                var nx = x - step;
+                var ny = y - step * k;
+
+                try
+                {
+                    g.DrawLine(Pens.Black, Helpers.Transform(x, y, min, max, width, height), Helpers.Transform(nx, ny, min, max, width, height));
+                }
+                catch { };
+
+                x = nx;
+                y = ny;
+            }
+        }
     }
 }

@@ -9,7 +9,7 @@ using Isocline.Nodes;
 
 namespace Isocline
 {
-    public class FunctionParser
+    public class FunctionParser 
     {
 
         public static Func<double, double> CreateFX(String experssion)
@@ -103,7 +103,7 @@ namespace Isocline
                 isUnaryMinus = false;
             }
 
-            
+
 
             return DeployStack(statements, operations);
         }
@@ -116,7 +116,7 @@ namespace Isocline
                 statements.Push(CreateOperation(operationName, statements));
             }
 
-            if(statements.Count() == 1)
+            if (statements.Count() == 1)
                 return statements.Pop();
 
             throw new Exception("Too few operators");
@@ -174,14 +174,14 @@ namespace Isocline
                     return new Log(statements.Pop(), newBase);
             }
 
-            throw  new Exception("Wrong operation");
+            throw new Exception("Wrong operation");
         }
 
         private static String[] consts = { "e", "pi" };
 
-        private static String[] operators = { "+", "-", "*", "/", 
+        private static String[] operators = { "+", "-", "*", "/",
                                               "sin", "cos", "tg", "ctg",
-                                              "asin", "acos", "atg", "actg",  
+                                              "asin", "acos", "atg", "actg",
                                               "^", "log"};
 
         private static bool IsConstant(String expression, int i)
@@ -198,7 +198,7 @@ namespace Isocline
         private static String GetConst(String expression, ref int i)
         {
             var position = i;
-            var result = consts.First(cnst => position + cnst.Length <= expression.Length && 
+            var result = consts.First(cnst => position + cnst.Length <= expression.Length &&
                                               String.Equals(expression.Substring(position, cnst.Length), cnst));
 
             i += result.Length;
@@ -218,7 +218,7 @@ namespace Isocline
         private static Constant GetNumber(String expression, ref int i)
         {
             int position = i;
-            while (i < expression.Length && 
+            while (i < expression.Length &&
                     (Char.IsDigit(expression[i]) || expression[i] == '.'))
                 i++;
 
@@ -230,7 +230,7 @@ namespace Isocline
         private static Variable GetVariable(string expression, ref int i)
         {
             int position = i;
-            while (i < expression.Length && Char.IsLetter(expression[i]) )
+            while (i < expression.Length && Char.IsLetter(expression[i]))
                 i++;
 
             var variableName = expression.Substring(position, i - position);
@@ -238,8 +238,8 @@ namespace Isocline
             return new Variable(variableName);
         }
 
-        private static Dictionary<string, int> Priority = 
-            new Dictionary<string, int> { {"+", 0}, {"*", 1}, {"-", 0}, {"/", 1}, 
+        private static Dictionary<string, int> Priority =
+            new Dictionary<string, int> { {"+", 0}, {"*", 1}, {"-", 0}, {"/", 1},
                                           {"(", -1}, {"-?", 3}, {"^", 2}, {"sin", 4},
                                           {"cos", 4},{"tg", 4}, {"ctg", 4}, {"asin", 4},
                                           {"acos", 4}, {"atg", 4}, {"actg", 4}, {"log", 4} };

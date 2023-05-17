@@ -14,7 +14,7 @@ namespace Isocline.Controller
         {
             var gm = new GraphMaster(min, max);
             return gm.CreateGraph(width, height,
-                    (g) => gm.DrawSolution(g, f, x0, y0));
+                    (g) => gm.DrawLinearInterpolation(g, f, x0, y0));
         }
     }
 }
